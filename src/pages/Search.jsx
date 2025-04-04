@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { searchRecipes } from '../utils/api';
 import '../styles/main.css';
 
 const Search = () => {
+  const [searchParams] = useSearchParams();
   const [query, setQuery] = useState('');
   const [recipes, setRecipes] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -16,6 +17,23 @@ const Search = () => {
   });
   const [activeFilters, setActiveFilters] = useState(0);
   const [animateIn, setAnimateIn] = useState(false);
+
+  // Handle category from URL
+  useEffect(() => {
+    const category = searchParams.get('category');
+    if (category) {
+      // Map category to appropriate filter
+      if (category === 'breakfast' || category === 'lunch' || category === 'dinner') {
+        setFilters(prev => ({ ...prev, mealType: category }));
+      } else if (category === 'vegetarian') {
+        setFilters(prev => ({ ...prev, diet: 'vegetarian' }));
+      } else if (category === 'desserts') {
+        setFilters(prev => ({ ...prev, mealType: 'dessert' }));
+      }
+      // Automatically search when category is present
+      handleSearch(null, category);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     // Count active filters
@@ -31,16 +49,16 @@ const Search = () => {
     }, 100);
   }, [filters]);
 
-  const handleSearch = async (e) => {
-    e.preventDefault();
-    if (!query.trim()) return;
+  const handleSearch = async (e, categoryQuery = '') => {
+    if (e) e.preventDefault();
+    if (!categoryQuery && !query.trim()) return;
 
     setLoading(true);
     setError(null);
     try {
       // Build filter parameters object
       const searchParams = {
-        query: query.trim(),
+        query: categoryQuery || query.trim(),
         number: 12 // Number of results to return
       };
 
