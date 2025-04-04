@@ -38,20 +38,20 @@ const Search = () => {
     setLoading(true);
     setError(null);
     try {
-      const params = new URLSearchParams({
-        apiKey: import.meta.env.VITE_SPOONACULAR_API_KEY,
-        query: query.trim(),
-        number: 12,
-        addRecipeInformation: true,
-        addRecipeNutrition: true,
-        ...filters
-      });
+      // Build filter parameters object
+      const filterParams = {};
+      if (filters.cuisine) filterParams.cuisine = filters.cuisine;
+      if (filters.diet) filterParams.diet = filters.diet;
+      if (filters.mealType) filterParams.type = filters.mealType;
+      if (filters.maxReadyTime) filterParams.maxReadyTime = filters.maxReadyTime;
 
       const response = await axios.get(
-        `https://api.spoonacular.com/recipes/complexSearch?${params}`
+        `https://api.spoonacular.com/recipes/complexSearch?query=${query.trim()}&apiKey=c150e8e5ce5142deade4b8249c0a28b3`,
+        { params: filterParams }
       );
       
-      if (response.data && response.data.results) {
+      
+      if (response.data && response.data.results && response.data.results.length > 0) {
         setRecipes(response.data.results);
       } else {
         setError('No recipes found. Try a different search term.');
@@ -59,7 +59,20 @@ const Search = () => {
       }
     } catch (error) {
       console.error('Error searching recipes:', error);
-      setError('Failed to fetch recipes. Please try again later.');
+      if (error.response) {
+        // Handle specific error responses
+        if (error.response.status === 404) {
+          setError('Recipe search service is not available. Please try again later.');
+        } else if (error.response.status === 402) {
+          setError('Daily API quota exceeded. Please try again tomorrow.');
+        } else {
+          setError('Failed to fetch recipes. Please try again later.');
+        }
+      } else if (error.request) {
+        setError('Network error. Please check your internet connection.');
+      } else {
+        setError('An unexpected error occurred. Please try again.');
+      }
       setRecipes([]);
     } finally {
       setLoading(false);
