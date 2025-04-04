@@ -4,6 +4,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { doc, setDoc, deleteDoc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { getRecipeById } from '../utils/api';
+import testApiCall from '../utils/test-env';
+import verifyApiKey from '../utils/verify-api-key';
 import '../styles/main.css';
 
 const RecipeDetail = () => {
@@ -17,6 +19,18 @@ const RecipeDetail = () => {
   const [savingStatus, setSavingStatus] = useState('idle');
 
   useEffect(() => {
+    // Test environment variables
+    console.log('RecipeDetail - Testing environment variables:');
+    console.log('VITE_SPOONACULAR_API_KEY:', import.meta.env.VITE_SPOONACULAR_API_KEY);
+    
+    // Test direct API call
+    testApiCall();
+    
+    // Verify API key
+    verifyApiKey().then(isValid => {
+      console.log('API key is valid:', isValid);
+    });
+    
     let isMounted = true;
 
     const fetchRecipe = async () => {

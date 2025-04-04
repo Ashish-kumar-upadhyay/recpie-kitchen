@@ -1,11 +1,10 @@
 import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
+import { getRandomRecipes } from '../utils/api';
 
 function Home() {
   const [featuredRecipes, setFeaturedRecipes] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  const apiKey = import.meta.env.VITE_SPOONACULAR_API_KEY;
 
   // Optional fallback mock data
   const mockRecipes = [
@@ -36,7 +35,7 @@ function Home() {
     {
       id: 5,
       title: "Gourmet Beef Burger",
-      image: "https://spoonacular.com/recipeImages/642539-556x370.jpg",
+      image: "https://spoonacular.com/recipeImages/642585-556x370.jpg",
       readyInMinutes: 35,
     },
     {
@@ -60,15 +59,7 @@ function Home() {
   useEffect(() => {
     const fetchFeaturedRecipes = async () => {
       try {
-        const response = await fetch(
-          `https://api.spoonacular.com/recipes/random?apiKey=${apiKey}&number=6`
-        );
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
+        const data = await getRandomRecipes(6);
         setFeaturedRecipes(data.recipes);
       } catch (error) {
         console.error('Error fetching featured recipes:', error.message);
@@ -80,7 +71,7 @@ function Home() {
     };
 
     fetchFeaturedRecipes();
-  }, [apiKey]);
+  }, []);
 
   return (
     <div className="home-page">

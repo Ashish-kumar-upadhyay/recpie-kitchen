@@ -1,29 +1,35 @@
 import axios from 'axios';
 
 const API_BASE_URL = 'https://api.spoonacular.com';
-const API_KEY = import.meta.env.VITE_SPOONACULAR_API_KEY;
+// Use a hardcoded API key as a fallback
+const API_KEY = '9cc7c4b829a04e2faf40713cefb7c6db'; // Your actual API key from .env file
 
 // Debug log for API key (remove in production)
+console.log('API Key:', API_KEY);
 console.log('API Key status:', API_KEY ? 'Present' : 'Missing');
+console.log('Environment variables:', import.meta.env);
 
 if (!API_KEY) {
-  console.error('Spoonacular API key is missing. Please check your .env.local file.');
+  console.error('Spoonacular API key is missing. Please check your .env file.');
 }
 
 // Create axios instance with default config
 const api = axios.create({
   baseURL: API_BASE_URL,
-  params: {
-    apiKey: API_KEY,
-  },
 });
 
 // Add request interceptor for debugging
 api.interceptors.request.use(
   (config) => {
+    // Add API key to all requests
+    config.params = {
+      ...config.params,
+      apiKey: API_KEY
+    };
+    
     // Debug log for requests (remove in production)
     console.log('Making request to:', config.url);
-    console.log('With API key present:', !!config.params.apiKey);
+    console.log('With params:', config.params);
     return config;
   },
   (error) => {
@@ -58,13 +64,15 @@ api.interceptors.response.use(
   }
 );
 
-export const searchRecipes = async (query, options = {}) => {
+export const searchRecipes = async (params) => {
   try {
     const response = await api.get('/recipes/complexSearch', {
       params: {
-        query,
-        ...options,
-      },
+        ...params,
+        instructionsRequired: true,
+        fillIngredients: true,
+        addRecipeInformation: true,
+      }
     });
     return response.data;
   } catch (error) {
@@ -84,9 +92,7 @@ export const getRecipeById = async (id) => {
 export const getRandomRecipes = async (number = 6) => {
   try {
     const response = await api.get('/recipes/random', {
-      params: {
-        number,
-      },
+      params: { number }
     });
     return response.data;
   } catch (error) {

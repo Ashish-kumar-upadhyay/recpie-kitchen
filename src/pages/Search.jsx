@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
+import { searchRecipes } from '../utils/api';
 import '../styles/main.css';
 
 const Search = () => {
@@ -39,40 +39,28 @@ const Search = () => {
     setError(null);
     try {
       // Build filter parameters object
-      const filterParams = {};
-      if (filters.cuisine) filterParams.cuisine = filters.cuisine;
-      if (filters.diet) filterParams.diet = filters.diet;
-      if (filters.mealType) filterParams.type = filters.mealType;
-      if (filters.maxReadyTime) filterParams.maxReadyTime = filters.maxReadyTime;
+      const searchParams = {
+        query: query.trim(),
+        number: 12 // Number of results to return
+      };
 
-      const response = await axios.get(
-        `https://api.spoonacular.com/recipes/complexSearch?query=${query.trim()}&apiKey=c150e8e5ce5142deade4b8249c0a28b3`,
-        { params: filterParams }
-      );
+      // Add filters if they are set
+      if (filters.cuisine) searchParams.cuisine = filters.cuisine;
+      if (filters.diet) searchParams.diet = filters.diet;
+      if (filters.mealType) searchParams.type = filters.mealType;
+      if (filters.maxReadyTime) searchParams.maxReadyTime = parseInt(filters.maxReadyTime);
+
+      const data = await searchRecipes(searchParams);
       
-      
-      if (response.data && response.data.results && response.data.results.length > 0) {
-        setRecipes(response.data.results);
+      if (data.results && data.results.length > 0) {
+        setRecipes(data.results);
       } else {
-        setError('No recipes found. Try a different search term.');
+        setError('No recipes found. Try different search terms or filters.');
         setRecipes([]);
       }
     } catch (error) {
       console.error('Error searching recipes:', error);
-      if (error.response) {
-        // Handle specific error responses
-        if (error.response.status === 404) {
-          setError('Recipe search service is not available. Please try again later.');
-        } else if (error.response.status === 402) {
-          setError('Daily API quota exceeded. Please try again tomorrow.');
-        } else {
-          setError('Failed to fetch recipes. Please try again later.');
-        }
-      } else if (error.request) {
-        setError('Network error. Please check your internet connection.');
-      } else {
-        setError('An unexpected error occurred. Please try again.');
-      }
+      setError(error.message || 'Failed to search recipes. Please try again.');
       setRecipes([]);
     } finally {
       setLoading(false);
@@ -250,103 +238,86 @@ const Search = () => {
             </div>
           </div>
         </form>
-      </div>
 
-      {error && (
-        <div className="enhanced-error-message">
-          <div className="error-icon">⚠️</div>
-          <div className="error-content">
-            <h3 className="error-title">No recipes found</h3>
-            <p className="error-text">{error}</p>
+        {error && (
+          <div className="error-message">
+            <span className="error-icon">⚠️</span>
+            {error}
           </div>
-        </div>
-      )}
+        )}
 
-      {loading ? (
-        <div className="enhanced-loader-container">
-          <div className="enhanced-loader">
-            <div className="cook-animation">
-              <span className="cook-emoji">👨‍🍳</span>
-              <div className="steam steam-1"></div>
-              <div className="steam steam-2"></div>
-              <div className="steam steam-3"></div>
-              <div className="steam steam-4"></div>
+        {loading ? (
+          <div className="loader-container">
+            <div className="loader">
+              <div className="loader-inner"></div>
             </div>
-            <p className="loader-text">Cooking up some delicious recipes...</p>
+            <p>Finding delicious recipes...</p>
           </div>
-        </div>
-      ) : (
-        <>
-          {recipes.length > 0 && (
-            <div className="results-header">
-              <h2 className="results-title">Found {recipes.length} delicious recipes</h2>
-              <p className="results-subtitle">Click on any recipe to see the details</p>
-            </div>
-          )}
-          
-          <div className="enhanced-recipe-grid">
-            {recipes.map((recipe, index) => (
-              <Link
-                key={recipe.id}
-                to={`/recipe/${recipe.id}`}
-                className="enhanced-recipe-card"
-                style={{ animationDelay: `${index * 0.1}s` }}
-              >
-                <div className="recipe-image-container">
-                  <img src={recipe.image} alt={recipe.title} className="recipe-img" />
-                  <div className="recipe-overlay"></div>
-                  {recipe.vegetarian && <div className="recipe-badge vegetarian">🥬 Vegetarian</div>}
-                  {recipe.vegan && <div className="recipe-badge vegan">🌱 Vegan</div>}
-                  {recipe.glutenFree && <div className="recipe-badge gluten-free">🌾 Gluten Free</div>}
-                </div>
-                <div className="enhanced-recipe-content">
-                  <h3 className="enhanced-recipe-title">{recipe.title}</h3>
-                  <div className="enhanced-recipe-meta">
-                    <div className="meta-item">
-                      <span className="meta-icon">⏱️</span>
-                      <span>{recipe.readyInMinutes || "30"} min</span>
-                    </div>
-                    <div className="meta-item">
-                      <span className="meta-icon">👥</span>
-                      <span>{recipe.servings || "4"} servings</span>
-                    </div>
-                    {recipe.healthScore && (
-                      <div className="meta-item">
-                        <span className="meta-icon">❤️</span>
-                        <span>{recipe.healthScore}% healthy</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <div className="view-recipe">View Recipe</div>
-              </Link>
-            ))}
-          </div>
-          
-          {recipes.length > 0 && (
-            <div className="pagination-container">
-              <button className="pagination-button disabled">
-                <span>←</span> Previous
-              </button>
-              <div className="page-numbers">
-                <span className="current-page">1</span>
-                <span>of 1</span>
+        ) : (
+          <>
+            {recipes.length > 0 && (
+              <div className="results-header">
+                <h2 className="results-title">Found {recipes.length} delicious recipes</h2>
+                <p className="results-subtitle">Click on any recipe to see the details</p>
               </div>
-              <button className="pagination-button disabled">
-                Next <span>→</span>
-              </button>
+            )}
+            
+            <div className="enhanced-recipe-grid">
+              {recipes.map((recipe) => (
+                <Link
+                  key={recipe.id}
+                  to={`/recipe/${recipe.id}`}
+                  className="enhanced-recipe-card"
+                >
+                  <div className="recipe-image-container">
+                    <img 
+                      src={recipe.image} 
+                      alt={recipe.title} 
+                      className="recipe-img"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = '/placeholder-recipe.jpg';
+                      }}
+                    />
+                    <div className="recipe-overlay"></div>
+                    {recipe.vegetarian && <div className="recipe-badge vegetarian">🥬 Vegetarian</div>}
+                    {recipe.vegan && <div className="recipe-badge vegan">🌱 Vegan</div>}
+                    {recipe.glutenFree && <div className="recipe-badge gluten-free">🌾 Gluten Free</div>}
+                  </div>
+                  <div className="enhanced-recipe-content">
+                    <h3 className="enhanced-recipe-title">{recipe.title}</h3>
+                    <div className="enhanced-recipe-meta">
+                      <div className="meta-item">
+                        <span className="meta-icon">⏱️</span>
+                        <span>{recipe.readyInMinutes || "30"} min</span>
+                      </div>
+                      <div className="meta-item">
+                        <span className="meta-icon">👥</span>
+                        <span>{recipe.servings || "4"} servings</span>
+                      </div>
+                      {recipe.healthScore && (
+                        <div className="meta-item">
+                          <span className="meta-icon">❤️</span>
+                          <span>{recipe.healthScore}% healthy</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="view-recipe">View Recipe →</div>
+                </Link>
+              ))}
             </div>
-          )}
-          
-          {recipes.length === 0 && !error && (
-            <div className="empty-search-state">
-              <div className="empty-icon">🔍</div>
-              <h3>Ready to find some recipes?</h3>
-              <p>Enter ingredients or dish names in the search box above and click "Find Recipes"</p>
-            </div>
-          )}
-        </>
-      )}
+            
+            {recipes.length === 0 && !error && !loading && (
+              <div className="empty-search-state">
+                <div className="empty-icon">🔍</div>
+                <h3>Ready to find some recipes?</h3>
+                <p>Enter ingredients or dish names in the search box above and click "Find Recipes"</p>
+              </div>
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 };
