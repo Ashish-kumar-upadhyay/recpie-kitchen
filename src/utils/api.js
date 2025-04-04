@@ -3,6 +3,13 @@ import axios from 'axios';
 const API_BASE_URL = 'https://api.spoonacular.com';
 const API_KEY = import.meta.env.VITE_SPOONACULAR_API_KEY;
 
+// Debug log for API key (remove in production)
+console.log('API Key status:', API_KEY ? 'Present' : 'Missing');
+
+if (!API_KEY) {
+  console.error('Spoonacular API key is missing. Please check your .env.local file.');
+}
+
 // Create axios instance with default config
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -10,6 +17,19 @@ const api = axios.create({
     apiKey: API_KEY,
   },
 });
+
+// Add request interceptor for debugging
+api.interceptors.request.use(
+  (config) => {
+    // Debug log for requests (remove in production)
+    console.log('Making request to:', config.url);
+    console.log('With API key present:', !!config.params.apiKey);
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
 
 // Add response interceptor for error handling
 api.interceptors.response.use(
@@ -24,6 +44,7 @@ api.interceptors.response.use(
           throw new Error('Daily API quota exceeded. Please try again tomorrow.');
         case 401:
           console.error('Invalid API key. Please check your Spoonacular API key.');
+          console.error('Current API key status:', !!API_KEY);
           throw new Error('Invalid API key. Please check your configuration.');
         case 429:
           console.error('Too many requests. Please wait before trying again.');
