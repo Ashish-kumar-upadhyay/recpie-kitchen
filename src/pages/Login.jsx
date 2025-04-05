@@ -12,7 +12,7 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [animationComplete, setAnimationComplete] = useState(false);
-  const { login } = useAuth();
+  const { login, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -42,6 +42,21 @@ const Login = () => {
     } catch (error) {
       console.error('Login error:', error);
       setError(error.message || 'Failed to log in');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setError('');
+    setLoading(true);
+
+    try {
+      await loginWithGoogle();
+      navigate('/');
+    } catch (error) {
+      console.error('Google login error:', error);
+      setError(error.message || 'Failed to sign in with Google');
     } finally {
       setLoading(false);
     }
@@ -164,7 +179,11 @@ const Login = () => {
           </div>
 
           <div className="social-login">
-            <button className="social-button google">
+            <button 
+              className="social-button google"
+              onClick={handleGoogleSignIn}
+              disabled={loading}
+            >
               <span className="social-icon">G</span>
               <span>Continue with Google</span>
             </button>

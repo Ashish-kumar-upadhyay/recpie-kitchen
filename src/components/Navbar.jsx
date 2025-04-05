@@ -110,10 +110,16 @@ const Navbar = () => {
                 <span>Login</span>
               </Link>
             ) : (
-              <button onClick={handleLogout} className="nav-button logout-button">
-                <span className="button-icon">👋</span>
-                <span>Logout</span>
-              </button>
+              <div className="user-profile">
+                <div className="user-info">
+                  <span className="user-avatar">👤</span>
+                  <span className="user-name">{user.displayName || user.email?.split('@')[0] || 'User'}</span>
+                </div>
+                <button onClick={handleLogout} className="nav-button logout-button">
+                  <span className="button-icon">👋</span>
+                  <span>Logout</span>
+                </button>
+              </div>
             )}
           </div>
         </div>
