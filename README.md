@@ -3,7 +3,7 @@
 A Recipe Discovery and Management Platform for Food Lovers
 
 ## Deployed Project Link
-[https://recpie-kitchen.vercel.app/](#) <!-- Replace with actual deployed link -->
+[https://recpie-kitchen.vercel.app/]<!-- Replace with actual deployed link -->
 
 
 
